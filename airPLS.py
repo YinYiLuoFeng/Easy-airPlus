@@ -1,10 +1,12 @@
 import numpy as np
+import scipy
 from matplotlib import pyplot as plt
 from scipy.sparse import csc_matrix, eye, diags
 from scipy.sparse.linalg import spsolve
 from pandas import read_csv
 import os
 import matplotlib.pyplot as pl
+from scipy import signal
 
 
 def WhittakerSmooth(x, w, lambda_, differences=1):
@@ -47,6 +49,8 @@ if __name__ == '__main__':
 
     i = 0
     path1 = "元数据"  # 可自行修改
+    Savitzky_Golay = input("是否滤波？是，请按y；否，请按回车")
+
     isExists = os.path.exists(path1)
     if not isExists:
         os.makedirs(path1)
@@ -93,6 +97,8 @@ if __name__ == '__main__':
             x1 = x[0, :]  # 将二位数组转化为一维数组
             y1 = y[0, :]
             x = x1
+            if Savitzky_Golay == "y":
+                y1 = scipy.signal.savgol_filter(y1, 21, 3)
             c1 = y1 - airPLS(y1)  # 减去基线
             print("Plotting " + filename)
             font_dict = {'family': 'Times New Roman',
@@ -101,7 +107,8 @@ if __name__ == '__main__':
             # plt.xlabel(filename[0:len(filename) - 4], fontdict=font_dict) #标题，可自行修改
             fig = plt.figure()  # 生成画布
             ax = plt.axes()
-            ax.plot(x, y1, '-k')  # 原数据
+            ax.plot(x, y1, '-y')  # 原数据
+            ax.plot(x, airPLS(y1), '-b')  # 基线
             ax.plot(x, c1, '-r')  # 处理后数据
             plt.savefig(path2 + "/" + "处理后-" + filename[0:len(filename) - 4] + ".svg",
                         dpi=300, bbox_inches='tight',
