@@ -1,3 +1,4 @@
+# coding=utf-8
 import numpy as np
 import scipy
 from matplotlib import pyplot as plt
@@ -62,7 +63,7 @@ if __name__ == '__main__':
     window_length = 21  # window_length即窗口长度取值为奇数且不能超过len(x)。它越大，则平滑效果越明显；越小，则更贴近原始曲线。
     polyorder = 3  # polyorder为多项式拟合的阶数。它越小，则平滑效果越明显；越大，则更贴近原始曲线。
     if Savitzky_Golay == 'y':
-        print("\n高斯滤波参数：\nwindow_length=" + str(window_length)+"\npolyorder=" + str(polyorder)+"\n")
+        print("\n高斯滤波参数：\nwindow_length=" + str(window_length) + "\npolyorder=" + str(polyorder) + "\n")
 
     i = 0
 
@@ -104,19 +105,20 @@ if __name__ == '__main__':
     for filename in os.listdir(path1):
         if filename.endswith(".CSV") or filename.endswith(".csv") or filename.endswith(".txt") or filename.endswith(
                 ".TXT"):  # 判断文件格式，其余文本文件亦可加入
-            X1 = read_csv(path1 + "/" + filename, usecols=[0])  # 读取x坐标
-            Y1 = read_csv(path1 + "/" + filename, usecols=[1])  # 读取y坐标
-            x = X1.values.T  # 将DataFrame转换为 numpy() 数组，并将列向量转化为行向量
-            y = Y1.values.T
-            x1 = x[0, :]  # 将二位数组转化为一维数组
-            y1 = y[0, :]
-            x = x1
+            date = np.loadtxt(fname=path1 + "/" + filename, comments='#',delimiter=',').T
+            # X1 = read_csv(path1 + "/" + filename, usecols=[0])  # 读取x坐标
+            # Y1 = read_csv(path1 + "/" + filename, usecols=[1])  # 读取y坐标
+            # x = X1.values.T  # 将DataFrame转换为 numpy() 数组，并将列向量转化为行向量
+            # y = Y1.values.T
+            x = date[0, :]  # 将二位数组转化为一维数组
+            y = date[1, :]
+            y1 = y
 
             if Savitzky_Golay == "y":
                 y1 = scipy.signal.savgol_filter(y1, window_length, polyorder)
-
-            c1 = y1 - airPLS(y1, lambda_, porder, itermax)  # 减去基线
-            print("Plotting " + filename)
+            baseline = airPLS(y1, lambda_, porder, itermax)
+            c1 = y1 - baseline  # 减去基线
+            print("\nPlotting " + filename)
 
             font_dict = {'family': 'Times New Roman',
                          'weight': 'normal',
@@ -124,8 +126,10 @@ if __name__ == '__main__':
             # plt.xlabel(filename[0:len(filename) - 4], fontdict=font_dict) #标题，可自行修改
             fig = plt.figure()  # 生成画布
             ax = plt.axes()
-            ax.plot(x, y1, '-y')  # 原数据
-            ax.plot(x, airPLS(y1, lambda_, porder, itermax), '-b')  # 基线
+            ax.plot(x, y, '-k')  # 原数据
+            if Savitzky_Golay == "y":
+                ax.plot(x, y1, '-m')  # 平滑后的数据
+            ax.plot(x, baseline, 'lime')  # 基线
             ax.plot(x, c1, '-r')  # 处理后数据
             plt.savefig(path2 + "/" + "处理后-" + filename[0:len(filename) - 4] + ".svg",
                         dpi=300, bbox_inches='tight',
@@ -135,9 +139,22 @@ if __name__ == '__main__':
             plt.ylabel("Raman intensity")  # y轴标题
             pl.show()  # 展示图片，此命令需要在所以plt函数最后
 
-            print(filename + ' Done!\n')
-            stack_xy = np.column_stack((x, y1))  # 合并处理后数据
-            np.savetxt(path2 + "/" + "处理后-" + filename, stack_xy, delimiter=",")  # 输出处理后数据，格式为csv
+            print(filename + ' Done!')
+
+            if Savitzky_Golay == "y":
+                comment1 = '横轴数据,元数据,平滑后数据,基线,扣除基线后数据'
+                stack_xy = np.column_stack((x, y, y1, baseline, c1))  # 合并处理后数据
+                np.savetxt(path2 + "/" + "处理后-（x_元数据_平滑后元数据_基线_扣除基线后数据）-" + filename, stack_xy,
+                           header=comment1,
+                           delimiter=",",
+                           encoding='utf8')  # 输出处理后数据，格式为csv
+            else:
+                comment2 = '横轴数据,元数据,基线,扣除基线后数据'
+                stack_xy = np.column_stack((x, y1, baseline, c1))  # 合并处理后数据
+                np.savetxt(path2 + "/" + "处理后-（x_元数据_基线_扣除基线后数据）-" + filename, stack_xy,
+                           header=comment2,
+                           delimiter=",",
+                           encoding='utf8')  # 输出处理后数据，格式为csv
 
             i = i + 1
     print("共 " + str(i) + " 组数据处理完成")
