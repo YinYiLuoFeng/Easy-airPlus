@@ -9,7 +9,7 @@
 
 可根据处理结果通过调节 `airPLS` 中的 `lambda_` 、 `porder=1` 、 `itermax` 参数优化结果。
 
-提供简陋的平滑功能，使用 `Savitzky_Golay`算法滤波，强度可通过 `y1 = scipy.signal.savgol_filter(y1, 21, 3)`中的数值进行调节。
+提供简陋的平滑功能，使用 `Savitzky_Golay`算法滤波。
 `window_length`即窗口长度取值为奇数且不能超过len(x)。它越大，则平滑效果越明显；越小，则更贴近原始曲线。
 `polyorder`为多项式拟合的阶数。它越小，则平滑效果越明显；越大，则更贴近原始曲线。
 
