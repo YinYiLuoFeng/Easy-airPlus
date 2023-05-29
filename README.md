@@ -3,7 +3,7 @@
 
 鉴于原项目对科研小白不够友好，所以有了这个项目。
 
-如果用于其他光谱，注意修改图片坐标标题 `plt.xlabel、plt.xlabel` ，支持latex语法。
+如果用于其他光谱，注意修改图片坐标标题 `plt.xlabel、plt.ylabel` ，支持latex语法。
 
 图片可通过修改 `plt.savefig` 修改格式。
 
