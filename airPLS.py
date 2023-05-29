@@ -22,7 +22,7 @@ def WhittakerSmooth(x, w, lambda_, differences=1):
     return np.array(background)
 
 
-def airPLS(x, lambda_=100, porder=1, itermax=15):
+def airPLS(x, lambda_, porder, itermax):
     m = x.shape[0]
     w = np.ones(m)
     for i in range(1, itermax + 1):
@@ -30,7 +30,8 @@ def airPLS(x, lambda_=100, porder=1, itermax=15):
         d = x - z
         dssn = np.abs(d[d < 0].sum())
         if dssn < 0.001 * (abs(x)).sum() or i == itermax:
-            if i == itermax: print('WARING max iteration reached!')
+            if i == itermax:
+                print('WARING max iteration reached!')
             break
         w[d >= 0] = 0  # d>0 means that this point is part of a peak, so its weight is set to 0 in order to ignore it
         w[d < 0] = np.exp(i * np.abs(d[d < 0]) / dssn)
@@ -42,14 +43,28 @@ def airPLS(x, lambda_=100, porder=1, itermax=15):
 if __name__ == '__main__':
 
     print("本代码修改自airPLS项目（https://github.com/zmzhang/airPLS），用于处理拉曼光谱数据并输出相应图片。\n"
-          "如果用于其他光谱，注意修改图片坐标标题<plt.xlabel、plt.xlabel>，支持latex语法。\n"
+          "如果用于其他光谱，注意修改图片坐标标题<plt.xlabel、plt.ylabel>，支持latex语法。\n"
           "图片可通过修改<plt.savefig>修改格式。\n"
           "可根据处理结果通过调节<airPLS>中的lambda_、porder=1、itermax参数优化结果.\n"
           "使用前请先在'元数据'文件夹中放置数据，支持csv和txt格式。\n")
+    # airPLS参数
+    lambda_ = 100
+    porder = 1
+    itermax = 15
+    print("airPLS参数：\n", "lambda=", lambda_, "\n", "porder=", porder, "\n", "itermax=", itermax)
+
+    # 处理的数据与处理后的数据的存放位置
+    path1 = "元数据"  # 可自行修改
+    path2 = "处理后数据"  # 可自行修改
+
+    # 高斯滤波参数
+    Savitzky_Golay = input("\n是否滤波？是，请按y；否，请按回车")
+    window_length = 21  # window_length即窗口长度取值为奇数且不能超过len(x)。它越大，则平滑效果越明显；越小，则更贴近原始曲线。
+    polyorder = 3  # polyorder为多项式拟合的阶数。它越小，则平滑效果越明显；越大，则更贴近原始曲线。
+    if Savitzky_Golay == 'y':
+        print("\n高斯滤波参数：\nwindow_length=" + str(window_length)+"\npolyorder=" + str(polyorder)+"\n")
 
     i = 0
-    path1 = "元数据"  # 可自行修改
-    Savitzky_Golay = input("是否滤波？是，请按y；否，请按回车")
 
     isExists = os.path.exists(path1)
     if not isExists:
@@ -68,7 +83,6 @@ if __name__ == '__main__':
                 print("目录为空，请放入数据")
                 quit()
 
-    path2 = "处理后数据"  # 可自行修改
     isExists = os.path.exists(path2)
     # 判断结果
     if not isExists:
@@ -97,10 +111,13 @@ if __name__ == '__main__':
             x1 = x[0, :]  # 将二位数组转化为一维数组
             y1 = y[0, :]
             x = x1
+
             if Savitzky_Golay == "y":
-                y1 = scipy.signal.savgol_filter(y1, 21, 3)
-            c1 = y1 - airPLS(y1)  # 减去基线
+                y1 = scipy.signal.savgol_filter(y1, window_length, polyorder)
+
+            c1 = y1 - airPLS(y1, lambda_, porder, itermax)  # 减去基线
             print("Plotting " + filename)
+
             font_dict = {'family': 'Times New Roman',
                          'weight': 'normal',
                          'size': 18}
@@ -108,7 +125,7 @@ if __name__ == '__main__':
             fig = plt.figure()  # 生成画布
             ax = plt.axes()
             ax.plot(x, y1, '-y')  # 原数据
-            ax.plot(x, airPLS(y1), '-b')  # 基线
+            ax.plot(x, airPLS(y1, lambda_, porder, itermax), '-b')  # 基线
             ax.plot(x, c1, '-r')  # 处理后数据
             plt.savefig(path2 + "/" + "处理后-" + filename[0:len(filename) - 4] + ".svg",
                         dpi=300, bbox_inches='tight',
@@ -117,8 +134,10 @@ if __name__ == '__main__':
             plt.xlabel(r"Raman shift" + "$(cm^{-1} )$")  # x轴标题
             plt.ylabel("Raman intensity")  # y轴标题
             pl.show()  # 展示图片，此命令需要在所以plt函数最后
+
             print(filename + ' Done!\n')
             stack_xy = np.column_stack((x, y1))  # 合并处理后数据
             np.savetxt(path2 + "/" + "处理后-" + filename, stack_xy, delimiter=",")  # 输出处理后数据，格式为csv
+
             i = i + 1
     print("共 " + str(i) + " 组数据处理完成")
